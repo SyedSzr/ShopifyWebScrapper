@@ -1,0 +1,62 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#111;
+    color:white;
+    font-family:Arial;
+    min-height:100vh;
+    padding:40px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+h1{
+    margin-bottom:30px;
+}
+
+button{
+    padding:15px 30px;
+    font-size:18px;
+    border:none;
+    border-radius:10px;
+    background:#00c853;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    background:#00e676;
+}
+
+button:disabled{
+    background:gray;
+    cursor:not-allowed;
+}
+
+.progressBox{
+    margin-top:30px;
+    background:#1e1e1e;
+    padding:25px;
+    border-radius:15px;
+}
+
+.row{
+    margin-bottom:20px;
+}
+
+h3{
+    color:#00e676;
+    margin-bottom:5px;
+}
+
+p{
+    font-size:18px;
+}

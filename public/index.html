@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Advanced Shopify Scraper</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            color: white;
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .inputBox {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            background: #00c853;
+            color: white;
+        }
+
+        button:hover {
+            background: #00e676;
+        }
+
+        #status {
+            margin: 20px 0;
+            color: #00e676;
+        }
+
+        #products {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+        }
+
+        .content {
+            padding: 15px;
+        }
+
+        .title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .price {
+            color: #00e676;
+            margin-bottom: 10px;
+        }
+
+        .gallery {
+            display: flex;
+            gap: 10px;
+            overflow: auto;
+            margin-top: 15px;
+        }
+
+        .gallery img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .detailBtn {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .popup {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .popupContent {
+            background: #222;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow: auto;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .popupGallery {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .popupGallery img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .closeBtn {
+            background: red;
+            margin-bottom: 20px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Advanced Shopify Scraper</h1>
+
+        <div class="inputBox">
+
+            <input type="text" id="storeUrl" value="https://thestylenstuff.com" placeholder="Enter Shopify Store URL">
+
+            <button onclick="scrapeProducts()">
+                Start Scraping
+            </button>
+
+        </div>
+
+        <h2 id="status">Idle</h2>
+
+        <div id="products"></div>
+
+    </div>
+
+    <div class="popup" id="popup">
+
+        <div class="popupContent">
+
+            <button class="closeBtn" onclick="closePopup()">
+                Close
+            </button>
+
+            <div id="popupData"></div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        let allProducts = [];
+
+        async function scrapeProducts() {
+
+            const storeUrl =
+                document.getElementById("storeUrl")
+                    .value
+                    .trim();
+
+            let page = 1;
+
+            allProducts = [];
+
+            document.getElementById("products")
+                .innerHTML = "";
+
+            while (true) {
+
+                try {
+
+                    document.getElementById("status")
+                        .innerText =
+                        `Scraping Page ${page}`;
+
+                    const response =
+                        await fetch(
+                            `${storeUrl}/products.json?limit=250&page=${page}`
+                        );
+
+                    const data =
+                        await response.json();
+
+                    const products =
+                        data.products;
+
+                    if (!products || products.length === 0)
+                        break;
+
+                    allProducts.push(...products);
+
+                    renderProducts(allProducts);
+
+                    page++;
+
+                } catch (err) {
+
+                    console.log(err);
+
+                    alert("Scraping Failed");
+
+                    break;
+                }
+            }
+
+            document.getElementById("status")
+                .innerText =
+                `Completed (${allProducts.length} Products)`;
+
+            downloadJSON(allProducts);
+        }
+
+        function renderProducts(products) {
+
+            const container =
+                document.getElementById("products");
+
+            container.innerHTML = "";
+
+            products.forEach((product, index) => {
+
+                const image =
+                    product.images[0]?.src || "";
+
+                const price =
+                    product.variants[0]?.price || "0";
+
+                const card =
+                    document.createElement("div");
+
+                card.className = "card";
+
+                card.innerHTML = `
+
+            <img src="${image}">
+
+            <div class="content">
+
+                <div class="title">
+                    ${product.title}
+                </div>
+
+                <div class="price">
+                    Rs ${price}
+                </div>
+
+                <button
+                class="detailBtn"
+                onclick="detailScrape(${index})">
+
+                    Detail Scrape
+
+                </button>
+
+            </div>
+        `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function detailScrape(index) {
+
+            const product =
+                allProducts[index];
+
+            let html = `
+
+        <h2>${product.title}</h2>
+
+        <br>
+
+        <h3>Description</h3>
+
+        <div>
+            ${product.body_html}
+        </div>
+
+        <br>
+
+        <h3>Variants</h3>
+
+    `;
+
+            product.variants.forEach(v => {
+
+                html += `
+            <p>
+                ${v.title}
+                -
+                Rs ${v.price}
+            </p>
+        `;
+            });
+
+            html += `
+
+        <br>
+
+        <h3>All Images</h3>
+
+        <div class="popupGallery">
+    `;
+
+            product.images.forEach(img => {
+
+                html += `
+            <img src="${img.src}">
+        `;
+            });
+
+            html += `</div>`;
+
+            document.getElementById("popupData")
+                .innerHTML = html;
+
+            document.getElementById("popup")
+                .style.display = "flex";
+        }
+
+        function closePopup() {
+
+            document.getElementById("popup")
+                .style.display = "none";
+        }
+
+        function downloadJSON(data) {
+
+            const blob =
+                new Blob(
+                    [JSON.stringify(data, null, 2)],
+                    { type: "application/json" }
+                );
+
+            const a =
+                document.createElement("a");
+
+            a.href =
+                URL.createObjectURL(blob);
+
+            a.download = "products.json";
+
+            a.click();
+        }
+
+    </script>
+
+</body>
+
+</html>
