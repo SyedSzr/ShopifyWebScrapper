@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Advanced Shopify Scraper</title>
+    <title>Ultimate Shopify Scraper</title>
 
     <style>
         * {
@@ -27,18 +27,30 @@
             margin: auto;
         }
 
+        h1 {
+            margin-bottom: 20px;
+        }
+
         .inputBox {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         input {
             flex: 1;
+            min-width: 250px;
             padding: 15px;
             border: none;
             border-radius: 10px;
             font-size: 16px;
+            background: #222;
+            color: white;
+        }
+
+        input::placeholder {
+            color: #999;
         }
 
         button {
@@ -58,6 +70,14 @@
         #status {
             margin: 20px 0;
             color: #00e676;
+            font-size: 20px;
+        }
+
+        #categoryFilters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
 
         #products {
@@ -91,20 +111,6 @@
         .price {
             color: #00e676;
             margin-bottom: 10px;
-        }
-
-        .gallery {
-            display: flex;
-            gap: 10px;
-            overflow: auto;
-            margin-top: 15px;
-        }
-
-        .gallery img {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 8px;
         }
 
         .detailBtn {
@@ -149,6 +155,15 @@
             background: red;
             margin-bottom: 20px;
         }
+
+        .categoryBadge {
+            background: #00c853;
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
     </style>
 
 </head>
@@ -157,7 +172,7 @@
 
     <div class="container">
 
-        <h1>Advanced Shopify Scraper</h1>
+        <h1>Ultimate Shopify Scraper</h1>
 
         <div class="inputBox">
 
@@ -167,13 +182,33 @@
                 Start Scraping
             </button>
 
+            <button onclick="exportJSON()">
+                Export JSON
+            </button>
+
+            <button onclick="exportShopifyCSV()">
+                Export Shopify CSV
+            </button>
+
+            <button onclick="generateSEOTitles()">
+                Generate AI SEO
+            </button>
+
+            <button onclick="showShopifyUploader()">
+                Auto Shopify Upload
+            </button>
+
         </div>
 
         <h2 id="status">Idle</h2>
 
+        <div id="categoryFilters"></div>
+
         <div id="products"></div>
 
     </div>
+
+    <!-- PRODUCT POPUP -->
 
     <div class="popup" id="popup">
 
@@ -189,6 +224,40 @@
 
     </div>
 
+    <!-- SHOPIFY UPLOAD POPUP -->
+
+    <div class="popup" id="shopifyPopup">
+
+        <div class="popupContent">
+
+            <button class="closeBtn" onclick="closeShopifyPopup()">
+                Close
+            </button>
+
+            <h2>Shopify Auto Upload</h2>
+
+            <br>
+
+            <input type="text" id="shopifyStore" placeholder="your-store.myshopify.com">
+
+            <br><br>
+
+            <input type="text" id="shopifyToken" placeholder="Shopify Admin API Access Token">
+
+            <br><br>
+
+            <button onclick="uploadToShopify()">
+                Upload Products
+            </button>
+
+            <br><br>
+
+            <div id="uploadStatus"></div>
+
+        </div>
+
+    </div>
+
     <script>
 
         let allProducts = [];
@@ -199,6 +268,13 @@
                 document.getElementById("storeUrl")
                     .value
                     .trim();
+
+            if (!storeUrl) {
+
+                alert("Enter Store URL");
+
+                return;
+            }
 
             let page = 1;
 
@@ -248,11 +324,102 @@
             document.getElementById("status")
                 .innerText =
                 `Completed (${allProducts.length} Products)`;
+        }
 
-            downloadJSON(allProducts);
+        function renderCategoryFilters(products) {
+
+            const filterContainer =
+                document.getElementById("categoryFilters");
+
+            filterContainer.innerHTML = "";
+
+            const categories = ["All"];
+
+            products.forEach(product => {
+
+                const category =
+                    generateAICategory(product);
+
+                product.ai_category =
+                    category;
+
+                if (!categories.includes(category)) {
+
+                    categories.push(category);
+                }
+            });
+
+            categories.forEach(category => {
+
+                const btn =
+                    document.createElement("button");
+
+                btn.innerText = category;
+
+                btn.style.background = "#333";
+
+                btn.onclick = () => {
+
+                    filterProducts(category);
+
+                    document
+                        .querySelectorAll(
+                            "#categoryFilters button"
+                        )
+                        .forEach(b => {
+
+                            b.style.background =
+                                "#333";
+                        });
+
+                    btn.style.background =
+                        "#00c853";
+                };
+
+                filterContainer.appendChild(btn);
+            });
+
+            const firstBtn =
+                filterContainer.querySelector("button");
+
+            if (firstBtn) {
+
+                firstBtn.style.background =
+                    "#00c853";
+            }
+        }
+
+        function filterProducts(category) {
+
+            const cards =
+                document.querySelectorAll(".card");
+
+            cards.forEach(card => {
+
+                const cardCategory =
+                    card.getAttribute(
+                        "data-category"
+                    );
+
+                if (
+                    category === "All" ||
+                    cardCategory === category
+                ) {
+
+                    card.style.display =
+                        "block";
+                }
+                else {
+
+                    card.style.display =
+                        "none";
+                }
+            });
         }
 
         function renderProducts(products) {
+
+            renderCategoryFilters(products);
 
             const container =
                 document.getElementById("products");
@@ -267,16 +434,31 @@
                 const price =
                     product.variants[0]?.price || "0";
 
+                const aiCategory =
+                    generateAICategory(product);
+
+                product.ai_category =
+                    aiCategory;
+
                 const card =
                     document.createElement("div");
 
                 card.className = "card";
+
+                card.setAttribute(
+                    "data-category",
+                    aiCategory
+                );
 
                 card.innerHTML = `
 
             <img src="${image}">
 
             <div class="content">
+
+                <div class="categoryBadge">
+                    ${aiCategory}
+                </div>
 
                 <div class="title">
                     ${product.title}
@@ -301,6 +483,123 @@
             });
         }
 
+        function generateAICategory(product) {
+
+            const text = (
+                (product.title || "") +
+                " " +
+                (product.product_type || "") +
+                " " +
+                (product.tags || "")
+            ).toLowerCase();
+
+            // SHOES
+
+            if (
+                text.includes("shoe") ||
+                text.includes("sneaker") ||
+                text.includes("boot") ||
+                text.includes("heel") ||
+                text.includes("loafer")
+            ) {
+                return "Apparel & Accessories > Shoes";
+            }
+
+            // BAGS
+
+            if (
+                text.includes("bag") ||
+                text.includes("wallet") ||
+                text.includes("handbag")
+            ) {
+                return "Apparel & Accessories > Handbags, Wallets & Cases";
+            }
+
+            // WATCHES
+
+            if (
+                text.includes("watch")
+            ) {
+                return "Apparel & Accessories > Jewelry > Watches";
+            }
+
+            // JACKETS
+
+            if (
+                text.includes("jacket") ||
+                text.includes("hoodie") ||
+                text.includes("coat")
+            ) {
+                return "Apparel & Accessories > Clothing > Outerwear";
+            }
+
+            // PERFUMES
+
+            if (
+                text.includes("perfume") ||
+                text.includes("fragrance") ||
+                text.includes("deo")
+            ) {
+                return "Health & Beauty > Personal Care > Cosmetics > Perfume & Cologne";
+            }
+
+            // KIDS
+
+            if (
+                text.includes("kid") ||
+                text.includes("baby") ||
+                text.includes("children")
+            ) {
+                return "Apparel & Accessories > Clothing";
+            }
+
+            // ELECTRONICS
+
+            if (
+                text.includes("mobile") ||
+                text.includes("laptop") ||
+                text.includes("headphone") ||
+                text.includes("earbuds")
+            ) {
+                return "Electronics";
+            }
+
+            // BEAUTY
+
+            if (
+                text.includes("makeup") ||
+                text.includes("cream") ||
+                text.includes("serum") ||
+                text.includes("lipstick")
+            ) {
+                return "Health & Beauty > Personal Care > Cosmetics";
+            }
+
+            // WOMEN
+
+            if (
+                text.includes("women") ||
+                text.includes("female") ||
+                text.includes("ladies")
+            ) {
+                return "Apparel & Accessories > Clothing";
+            }
+
+            // MEN
+
+            if (
+                text.includes("men") ||
+                text.includes("male") ||
+                text.includes("gents")
+            ) {
+                return "Apparel & Accessories > Clothing";
+            }
+
+            // DEFAULT
+
+            return "Apparel & Accessories > Clothing";
+        }
+
         function detailScrape(index) {
 
             const product =
@@ -309,6 +608,12 @@
             let html = `
 
         <h2>${product.title}</h2>
+
+        <br>
+
+        <h3>Category</h3>
+
+        <p>${product.ai_category}</p>
 
         <br>
 
@@ -366,11 +671,18 @@
                 .style.display = "none";
         }
 
-        function downloadJSON(data) {
+        function exportJSON() {
+
+            if (allProducts.length === 0) {
+
+                alert("No Products");
+
+                return;
+            }
 
             const blob =
                 new Blob(
-                    [JSON.stringify(data, null, 2)],
+                    [JSON.stringify(allProducts, null, 2)],
                     { type: "application/json" }
                 );
 
@@ -380,9 +692,377 @@
             a.href =
                 URL.createObjectURL(blob);
 
-            a.download = "products.json";
+            a.download =
+                "products.json";
 
             a.click();
+        }
+
+        function exportShopifyCSV() {
+
+            if (allProducts.length === 0) {
+
+                alert("No Products");
+
+                return;
+            }
+
+            // GET ACTIVE CATEGORY
+
+            let selectedCategory = "All";
+
+            const activeBtn =
+                document.querySelector(
+                    '#categoryFilters button[style*="rgb(0, 200, 83)"]'
+                );
+
+            if (activeBtn) {
+
+                selectedCategory =
+                    activeBtn.innerText;
+            }
+
+            // FILTER PRODUCTS
+
+            let filteredProducts =
+                allProducts;
+
+            if (selectedCategory !== "All") {
+
+                filteredProducts =
+                    allProducts.filter(product =>
+
+                        product.ai_category ===
+                        selectedCategory
+                    );
+            }
+
+            let csvRows = [];
+
+            // SHOPIFY HEADERS
+
+            csvRows.push([
+
+                "Handle",
+                "Title",
+                "Body (HTML)",
+                "Vendor",
+                "Product Category",
+                "Type",
+                "Tags",
+                "Published",
+                "Option1 Name",
+                "Option1 Value",
+                "Variant SKU",
+                "Variant Price",
+                "Variant Inventory Qty",
+                "Variant Inventory Tracker",
+                "Variant Inventory Policy",
+                "Variant Fulfillment Service",
+                "Variant Requires Shipping",
+                "Variant Taxable",
+                "Image Src",
+                "Image Position",
+                "SEO Title"
+
+            ].join(","));
+
+            filteredProducts.forEach(product => {
+
+                const handle =
+                    product.handle || "";
+
+                const title =
+                    cleanCSV(
+                        product.title || ""
+                    );
+
+                const body =
+                    cleanCSV(
+                        product.body_html || ""
+                    );
+
+                const vendor =
+                    cleanCSV(
+                        product.vendor || ""
+                    );
+
+                const category =
+                    cleanCSV(
+                        product.ai_category || ""
+                    );
+
+                const type =
+                    cleanCSV(
+                        product.product_type || ""
+                    );
+
+                const tags =
+                    cleanCSV(
+                        product.tags || ""
+                    );
+
+                const seoTitle =
+                    cleanCSV(
+                        product.seo_title ||
+                        product.title
+                    );
+
+                const variants =
+                    product.variants || [];
+
+                const images =
+                    product.images || [];
+
+                // VARIANTS
+
+                variants.forEach((variant, variantIndex) => {
+
+                    const mainImage =
+                        images[0]?.src || "";
+
+                    csvRows.push([
+
+                        handle,
+                        `"${title}"`,
+                        `"${body}"`,
+                        `"${vendor}"`,
+                        `"${category}"`,
+                        `"${type}"`,
+                        `"${tags}"`,
+                        "TRUE",
+                        "Title",
+                        `"${cleanCSV(variant.title)}"`,
+                        `"${variant.sku || ""}"`,
+                        variant.price || "0",
+                        variant.inventory_quantity || "100",
+                        "shopify",
+                        "deny",
+                        "manual",
+                        "TRUE",
+                        "TRUE",
+                        mainImage,
+                        "1",
+                        `"${seoTitle}"`
+
+                    ].join(","));
+                });
+
+                // GALLERY IMAGES
+
+                images.forEach((img, index) => {
+
+                    if (index === 0)
+                        return;
+
+                    csvRows.push([
+
+                        handle,
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        img.src,
+                        index + 1,
+                        ""
+
+                    ].join(","));
+                });
+            });
+
+            const csvContent =
+                csvRows.join("\n");
+
+            const blob =
+                new Blob(
+                    [csvContent],
+                    {
+                        type: "text/csv;charset=utf-8;"
+                    }
+                );
+
+            const link =
+                document.createElement("a");
+
+            link.href =
+                URL.createObjectURL(blob);
+
+            // CATEGORY BASED FILE NAME
+
+            const fileName =
+                selectedCategory
+                    .replace(/\s+/g, "-")
+                    .toLowerCase();
+
+            link.download =
+                `${fileName}-shopify-products.csv`;
+
+            link.click();
+
+            alert(
+                `${filteredProducts.length} Products Exported`
+            );
+        }
+
+        function generateSEOTitles() {
+
+            if (allProducts.length === 0) {
+
+                alert("No Products");
+
+                return;
+            }
+
+            allProducts.forEach(product => {
+
+                const seoTitle =
+                    `${product.title} | Buy ${product.ai_category} Online Pakistan`;
+
+                product.seo_title =
+                    seoTitle;
+            });
+
+            alert("AI SEO Titles Generated");
+        }
+
+        function showShopifyUploader() {
+
+            document.getElementById("shopifyPopup")
+                .style.display = "flex";
+        }
+
+        function closeShopifyPopup() {
+
+            document.getElementById("shopifyPopup")
+                .style.display = "none";
+        }
+
+        async function uploadToShopify() {
+
+            const store =
+                document.getElementById("shopifyStore")
+                    .value
+                    .trim();
+
+            const token =
+                document.getElementById("shopifyToken")
+                    .value
+                    .trim();
+
+            if (!store || !token) {
+
+                alert("Enter Store + Token");
+
+                return;
+            }
+
+            if (allProducts.length === 0) {
+
+                alert("No Products");
+
+                return;
+            }
+
+            let uploaded = 0;
+
+            for (const product of allProducts) {
+
+                try {
+
+                    document.getElementById("uploadStatus")
+                        .innerText =
+                        `Uploading ${uploaded + 1} / ${allProducts.length}`;
+
+                    const payload = {
+
+                        product: {
+
+                            title:
+                                product.seo_title ||
+                                product.title,
+
+                            body_html:
+                                product.body_html,
+
+                            vendor:
+                                product.vendor,
+
+                            product_type:
+                                product.ai_category,
+
+                            tags:
+                                product.tags,
+
+                            images:
+                                product.images.map(img => ({
+                                    src: img.src
+                                })),
+
+                            variants:
+                                product.variants.map(v => ({
+                                    option1: v.title,
+                                    price: v.price,
+                                    sku: v.sku
+                                }))
+                        }
+                    };
+
+                    await fetch(
+                        `https://${store}/admin/api/2025-01/products.json`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-Shopify-Access-Token": token
+                            },
+                            body: JSON.stringify(payload)
+                        }
+                    );
+
+                    uploaded++;
+
+                } catch (err) {
+
+                    console.log(err);
+                }
+            }
+
+            document.getElementById("uploadStatus")
+                .innerText =
+                `Completed Upload (${uploaded})`;
+
+            alert("Upload Completed");
+        }
+
+        function cleanCSV(text) {
+
+            return String(text)
+                .replace(/"/g, '""')
+                .replace(/\n/g, ' ')
+                .replace(/\r/g, ' ');
+        }
+
+        function stripHTML(html) {
+
+            const div =
+                document.createElement("div");
+
+            div.innerHTML = html;
+
+            return div.textContent || div.innerText || "";
         }
 
     </script>
