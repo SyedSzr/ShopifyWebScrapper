@@ -1430,10 +1430,14 @@
 
         async function uploadToShopify() {
 
-            const store =
+            const storeInput =
                 document.getElementById("shopifyStore")
                     .value
                     .trim();
+            const store =
+                storeInput
+                    .replace(/^https?:\/\//i, "")
+                    .replace(/\/+$/, "");
 
             const token =
                 document.getElementById("shopifyToken")
@@ -1455,6 +1459,7 @@
             }
 
             let uploaded = 0;
+            let failed = 0;
 
             for (const product of allProducts) {
 
@@ -1498,31 +1503,48 @@
                         }
                     };
 
-                    await fetch(
-                        `https://${store}/admin/api/2025-01/products.json`,
+                    const response = await fetch(
+                        "/upload",
                         {
                             method: "POST",
                             headers: {
-                                "Content-Type": "application/json",
-                                "X-Shopify-Access-Token": token
+                                "Content-Type": "application/json"
                             },
-                            body: JSON.stringify(payload)
+                            body: JSON.stringify({
+                                store,
+                                token,
+                                product: payload.product
+                            })
                         }
                     );
 
-                    uploaded++;
+                    if (response.ok) {
+                        uploaded++;
+                    } else {
+                        failed++;
+                        let errorData = {};
+                        try {
+                            errorData = await response.json();
+                        } catch (err) {
+                            errorData = { error: "Unknown upload error" };
+                        }
+                        console.error("Upload failed for product:", product.title, errorData);
+                        document.getElementById("uploadStatus").innerText =
+                            `Failed: ${product.title} (${errorData.error ? JSON.stringify(errorData.error) : "Unknown error"})`;
+                    }
 
                 } catch (err) {
 
                     console.log(err);
+                    failed++;
                 }
             }
 
             document.getElementById("uploadStatus")
                 .innerText =
-                `Completed Upload (${uploaded})`;
+                `Completed Upload (${uploaded} succeeded, ${failed} failed)`;
 
-            alert("Upload Completed");
+            alert(`Upload Completed (${uploaded} succeeded, ${failed} failed)`);
         }
 
         function cleanCSV(text) {
