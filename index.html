@@ -194,6 +194,27 @@
             margin-bottom: 18px;
         }
 
+        .storeLabel {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .storeInputGroup {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .inputGroup {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .storeInputs input {
             width: 100%;
             padding: 16px 20px;
@@ -519,8 +540,29 @@
         </div>
 
         <div class="storeInputs">
-            <input type="text" id="storeName" placeholder="Enter Shopify Store Name">
-            <input type="text" id="storeUrl" value="https://thestylenstuff.com" placeholder="Enter Shopify Store URL">
+            <div>
+                <div class="storeLabel">📋 Source Store (to scrape from)</div>
+                <div class="storeInputGroup">
+                    <div class="inputGroup">
+                        <input type="text" id="sourceStoreName" placeholder="Source Store Name">
+                    </div>
+                    <div class="inputGroup">
+                        <input type="text" id="sourceStoreUrl" value="https://thestylenstuff.com"
+                            placeholder="Source Store URL to scrape">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="storeLabel">🏪 Your Store (for SEO content)</div>
+                <div class="storeInputGroup">
+                    <div class="inputGroup">
+                        <input type="text" id="yourStoreName" placeholder="Your Store Name">
+                    </div>
+                    <div class="inputGroup">
+                        <input type="text" id="yourStoreUrl" placeholder="Your Store URL">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="inputBox">
@@ -618,7 +660,7 @@
         async function scrapeProducts() {
 
             const storeUrl =
-                document.getElementById("storeUrl")
+                document.getElementById("sourceStoreUrl")
                     .value
                     .trim();
 
@@ -1294,17 +1336,17 @@
 
         function getStoreName() {
             const customName =
-                document.getElementById("storeName").value.trim();
+                document.getElementById("yourStoreName").value.trim();
 
             if (customName) {
                 return customName;
             }
 
             const rawUrl =
-                document.getElementById("storeUrl").value.trim();
+                document.getElementById("yourStoreUrl").value.trim();
 
             if (!rawUrl) {
-                return "Shopify Store";
+                return "Your Store";
             }
 
             try {
@@ -1329,10 +1371,10 @@
                 return;
             }
 
-            const storeName =
+            const yourStoreName =
                 getStoreName();
-            const storeUrl =
-                document.getElementById("storeUrl").value.trim();
+            const yourStoreUrl =
+                document.getElementById("yourStoreUrl").value.trim();
 
             allProducts.forEach(product => {
 
@@ -1340,7 +1382,7 @@
                     stripHTML(product.title || "").trim();
 
                 const baseTitle =
-                    currentTitle.replace(/\s*\|\s*Buy .*? Online Pakistan$/i, "").trim() ||
+                    currentTitle.replace(/\s*\|\s*Buy .*? from .*?$/i, "").trim() ||
                     currentTitle;
 
                 const category =
@@ -1351,10 +1393,10 @@
                     category;
 
                 const seoTitle =
-                    `${baseTitle} | Buy ${category} from ${storeName}`;
+                    `${baseTitle} | Buy ${category} from ${yourStoreName}`;
 
                 const seoDescription =
-                    `${baseTitle} is a premium ${category} product from ${storeName}. Shop now at ${storeUrl || "Shopify"} for fast shipping, great prices, and SEO-friendly product pages optimized for Google indexing.`;
+                    `${baseTitle} is a premium ${category} product from ${yourStoreName}. Shop now at ${yourStoreUrl || "your store"} for fast shipping, great prices, and SEO-friendly product pages optimized for Google indexing.`;
 
                 product.seo_title =
                     seoTitle;
@@ -1366,12 +1408,12 @@
                     seoTitle;
 
                 product.body_html =
-                    `<p>${seoDescription}</p><p>Explore more products from ${storeName} on <a href="${storeUrl || "#"}" target="_blank" rel="noopener">${storeUrl || "your Shopify store"}</a>. Browse page after page for the best deals and indexed product content.</p>`;
+                    `<p>${seoDescription}</p><p>Explore more products from ${yourStoreName} on <a href="${yourStoreUrl || "#"}" target="_blank" rel="noopener">${yourStoreUrl || "your Shopify store"}</a>. Browse page after page for the best deals and indexed product content.</p>`;
             });
 
             renderProducts(allProducts);
 
-            alert("AI SEO Titles and Descriptions Updated using store name and URL");
+            alert(`SEO content updated for ${yourStoreName}`);
         }
 
         function showShopifyUploader() {
