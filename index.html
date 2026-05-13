@@ -244,6 +244,54 @@
             font-size: 0.95rem;
         }
 
+        .trendPanel {
+            margin-bottom: 24px;
+            padding: 20px 22px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .trendPanel h3 {
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .trendGrid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            color: var(--muted);
+        }
+
+        .trendItem {
+            padding: 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .exportRow {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .exportRow.threeCol {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .miniBtn {
+            min-height: 44px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+        }
+
         @media (max-width: 760px) {
             .statsPanel {
                 grid-template-columns: 1fr;
@@ -531,11 +579,23 @@
             </div>
             <div class="statCard">
                 <strong id="categoryCount">0</strong>
-                <span>AI Categories</span>
+                <span>Total Categories</span>
             </div>
             <div class="statCard">
-                <strong id="filterLabel">All</strong>
-                <span>Current Filter</span>
+                <strong id="averagePrice">Rs 0</strong>
+                <span>Average Price</span>
+            </div>
+            <div class="statCard">
+                <strong id="highestPrice">Rs 0</strong>
+                <span>Highest Price</span>
+            </div>
+            <div class="statCard">
+                <strong id="lowestPrice">Rs 0</strong>
+                <span>Lowest Price</span>
+            </div>
+            <div class="statCard">
+                <strong id="mostUsedTags">-</strong>
+                <span>Most Used Tags</span>
             </div>
         </div>
 
@@ -585,12 +645,19 @@
                 Generate AI SEO
             </button>
 
-            <button onclick="showShopifyUploader()">
+            <button onclick="showShopifyUploader()" style="display: none;">
                 Auto Shopify Upload
             </button>
         </div>
 
         <h2 id="status">Idle</h2>
+
+        <div class="trendPanel">
+            <h3>AI Trend Analysis</h3>
+            <div class="trendGrid" id="trendInsights">
+                <div class="trendItem">Scrape products to generate trend insights.</div>
+            </div>
+        </div>
 
         <div id="categoryFilters"></div>
 
@@ -723,11 +790,47 @@
 
         function updateDashboardStats(products) {
             const categories = new Set(products.map(product => generateAICategory(product)));
+            const allVariantPrices = [];
+            const tagCounts = {};
+
+            products.forEach(product => {
+                const variants = product.variants || [];
+                variants.forEach(variant => {
+                    const price = Number(variant?.price || 0);
+                    if (!Number.isNaN(price) && price > 0) {
+                        allVariantPrices.push(price);
+                    }
+                });
+
+                const tags = String(product.tags || "")
+                    .split(",")
+                    .map(tag => tag.trim().toLowerCase())
+                    .filter(Boolean);
+
+                tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            });
+
             document.getElementById("productsCount").innerText = products.length;
             document.getElementById("categoryCount").innerText = categories.size;
 
-            const activeFilter = document.querySelector("#categoryFilters button.active");
-            document.getElementById("filterLabel").innerText = activeFilter ? activeFilter.innerText : "All";
+            const average = allVariantPrices.length
+                ? Math.round(allVariantPrices.reduce((sum, price) => sum + price, 0) / allVariantPrices.length)
+                : 0;
+            const highest = allVariantPrices.length ? Math.max(...allVariantPrices) : 0;
+            const lowest = allVariantPrices.length ? Math.min(...allVariantPrices) : 0;
+
+            const topTags = Object.entries(tagCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([tag, count]) => `${tag} (${count})`)
+                .join(", ");
+
+            document.getElementById("averagePrice").innerText = `Rs ${average}`;
+            document.getElementById("highestPrice").innerText = `Rs ${highest}`;
+            document.getElementById("lowestPrice").innerText = `Rs ${lowest}`;
+            document.getElementById("mostUsedTags").innerText = topTags || "-";
         }
 
         function renderCategoryFilters(products) {
@@ -822,6 +925,7 @@
 
             renderCategoryFilters(products);
             updateDashboardStats(products);
+            renderTrendAnalysis(products);
 
             const container =
                 document.getElementById("products");
@@ -831,7 +935,7 @@
             products.forEach((product, index) => {
 
                 const image =
-                    product.images[0]?.src || "";
+                    getImageSource((product.images || [])[0]);
 
                 const price =
                     product.variants[0]?.price || "0";
@@ -877,6 +981,15 @@
                     Detail Scrape
 
                 </button>
+
+                <div class="exportRow">
+                    <button class="miniBtn" onclick="exportSingleProductJSON(${index})">
+                        Export JSON
+                    </button>
+                    <button class="miniBtn" onclick="exportSingleProductCSV(${index})">
+                        Export CSV
+                    </button>
+                </div>
 
             </div>
         `;
@@ -1066,11 +1179,19 @@
             product.images.forEach(img => {
 
                 html += `
-            <img src="${img.src}">
+            <img src="${getImageSource(img)}">
         `;
             });
 
             html += `</div>`;
+
+            html += `
+        <br>
+        <div class="exportRow">
+            <button class="miniBtn" onclick="exportSingleProductJSON(${index})">Export This Product JSON</button>
+            <button class="miniBtn" onclick="exportSingleProductCSV(${index})">Export This Product CSV</button>
+        </div>
+    `;
 
             document.getElementById("popupData")
                 .innerHTML = html;
@@ -1100,16 +1221,36 @@
                     { type: "application/json" }
                 );
 
-            const a =
-                document.createElement("a");
+            downloadBlob(blob, "products.json");
+        }
 
-            a.href =
-                URL.createObjectURL(blob);
+        function exportSingleProductJSON(index) {
 
-            a.download =
-                "products.json";
+            const product = allProducts[index];
 
-            a.click();
+            if (!product) {
+                alert("Product not found");
+                return;
+            }
+
+            const fileName = `${slugify(product.title || "product")}.json`;
+            const blob = new Blob([JSON.stringify(product, null, 2)], { type: "application/json" });
+            downloadBlob(blob, fileName);
+        }
+
+        function exportSingleProductCSV(index) {
+
+            const product = allProducts[index];
+
+            if (!product) {
+                alert("Product not found");
+                return;
+            }
+
+            const rows = buildShopifyCsvRowsForProducts([product]);
+            const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+            const fileName = `${slugify(product.title || "product")}.csv`;
+            downloadBlob(blob, fileName);
         }
 
         function exportShopifyCSV() {
@@ -1151,12 +1292,44 @@
                     );
             }
 
-            let csvRows = [];
+            const csvRows = buildShopifyCsvRowsForProducts(filteredProducts);
 
-            // SHOPIFY HEADERS
+            const csvContent =
+                csvRows.join("\n");
+
+            const blob =
+                new Blob(
+                    [csvContent],
+                    {
+                        type: "text/csv;charset=utf-8;"
+                    }
+                );
+
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+
+            // CATEGORY BASED FILE NAME
+
+            const fileName =
+                selectedCategory
+                    .replace(/\s+/g, "-")
+                    .toLowerCase();
+
+            link.download =
+                `${fileName}-shopify-products.csv`;
+
+            link.click();
+
+            alert(
+                `${filteredProducts.length} Products Exported`
+            );
+        }
+
+        function buildShopifyCsvRowsForProducts(products) {
+
+            const csvRows = [];
 
             csvRows.push([
-
                 "Handle",
                 "Title",
                 "Body (HTML)",
@@ -1179,65 +1352,24 @@
                 "Image Position",
                 "SEO Title",
                 "SEO Description"
-
             ].join(","));
 
-            filteredProducts.forEach(product => {
+            products.forEach(product => {
+                const handle = product.handle || slugify(product.title || "product");
+                const title = cleanCSV(product.title || "");
+                const body = cleanCSV(product.body_html || "");
+                const vendor = cleanCSV(product.vendor || "");
+                const category = cleanCSV(product.ai_category || generateAICategory(product));
+                const type = cleanCSV(product.product_type || "");
+                const tags = cleanCSV(product.tags || "");
+                const seoTitle = cleanCSV(product.seo_title || product.title || "");
+                const variants = product.variants || [{ title: "Default Title", price: "0" }];
+                const images = product.images || [];
 
-                const handle =
-                    product.handle || "";
-
-                const title =
-                    cleanCSV(
-                        product.title || ""
-                    );
-
-                const body =
-                    cleanCSV(
-                        product.body_html || ""
-                    );
-
-                const vendor =
-                    cleanCSV(
-                        product.vendor || ""
-                    );
-
-                const category =
-                    cleanCSV(
-                        product.ai_category || ""
-                    );
-
-                const type =
-                    cleanCSV(
-                        product.product_type || ""
-                    );
-
-                const tags =
-                    cleanCSV(
-                        product.tags || ""
-                    );
-
-                const seoTitle =
-                    cleanCSV(
-                        product.seo_title ||
-                        product.title
-                    );
-
-                const variants =
-                    product.variants || [];
-
-                const images =
-                    product.images || [];
-
-                // VARIANTS
-
-                variants.forEach((variant, variantIndex) => {
-
-                    const mainImage =
-                        images[0]?.src || "";
+                variants.forEach(variant => {
+                    const mainImage = getImageSource(images[0]);
 
                     csvRows.push([
-
                         handle,
                         `"${title}"`,
                         `"${body}"`,
@@ -1247,7 +1379,7 @@
                         `"${tags}"`,
                         "TRUE",
                         "Title",
-                        `"${cleanCSV(variant.title)}"`,
+                        `"${cleanCSV(variant.title || "Default Title")}"`,
                         `"${variant.sku || ""}"`,
                         variant.price || "0",
                         variant.inventory_quantity || "100",
@@ -1260,78 +1392,102 @@
                         "1",
                         `"${seoTitle}"`,
                         `"${cleanCSV(product.seo_description || "")}"`
-
                     ].join(","));
                 });
 
-                // GALLERY IMAGES
-
-                images.forEach((img, index) => {
-
-                    if (index === 0)
+                images.forEach((img, imageIndex) => {
+                    if (imageIndex === 0) {
                         return;
+                    }
 
                     csvRows.push([
-
-                        handle,
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        img.src,
-                        index + 1,
-                        "",
-                        ""
-
+                        handle, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                        getImageSource(img), imageIndex + 1, "", ""
                     ].join(","));
                 });
             });
 
-            const csvContent =
-                csvRows.join("\n");
+            return csvRows;
+        }
 
-            const blob =
-                new Blob(
-                    [csvContent],
-                    {
-                        type: "text/csv;charset=utf-8;"
+        function renderTrendAnalysis(products) {
+
+            const target = document.getElementById("trendInsights");
+
+            if (!products || products.length === 0) {
+                target.innerHTML = `<div class="trendItem">Scrape products to generate trend insights.</div>`;
+                return;
+            }
+
+            const categoryCounts = {};
+            const keywordCounts = {};
+            const categoryPrice = {};
+            const allPrices = [];
+
+            products.forEach(product => {
+                const category = product.ai_category || generateAICategory(product);
+                categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+
+                const text = `${product.title || ""} ${product.tags || ""}`.toLowerCase();
+                text.split(/[^a-z0-9]+/).forEach(word => {
+                    if (!word || word.length < 4) {
+                        return;
                     }
-                );
+                    keywordCounts[word] = (keywordCounts[word] || 0) + 1;
+                });
 
-            const link =
-                document.createElement("a");
+                const variant = (product.variants || [])[0];
+                const price = Number(variant?.price || 0);
+                if (!Number.isNaN(price) && price > 0) {
+                    allPrices.push(price);
+                    if (!categoryPrice[category]) {
+                        categoryPrice[category] = [];
+                    }
+                    categoryPrice[category].push(price);
+                }
+            });
 
-            link.href =
-                URL.createObjectURL(blob);
+            const topCategories = Object.entries(categoryCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3);
 
-            // CATEGORY BASED FILE NAME
+            const topKeywords = Object.entries(keywordCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 6);
 
-            const fileName =
-                selectedCategory
-                    .replace(/\s+/g, "-")
-                    .toLowerCase();
+            const topCategoryByPrice = Object.entries(categoryPrice)
+                .map(([name, prices]) => ({
+                    name,
+                    avg: prices.reduce((sum, n) => sum + n, 0) / prices.length
+                }))
+                .sort((a, b) => b.avg - a.avg)[0];
 
-            link.download =
-                `${fileName}-shopify-products.csv`;
+            const avgPrice = allPrices.length
+                ? (allPrices.reduce((sum, n) => sum + n, 0) / allPrices.length).toFixed(0)
+                : "0";
 
-            link.click();
+            target.innerHTML = `
+                <div class="trendItem"><strong>Top Categories</strong><br>${topCategories.map(([name, count]) => `${name} (${count})`).join("<br>") || "N/A"}</div>
+                <div class="trendItem"><strong>Trending Keywords</strong><br>${topKeywords.map(([word, count]) => `${word} (${count})`).join(", ") || "N/A"}</div>
+                <div class="trendItem"><strong>Average Price</strong><br>Rs ${avgPrice}</div>
+                <div class="trendItem"><strong>Premium Niche</strong><br>${topCategoryByPrice ? `${topCategoryByPrice.name} (Avg Rs ${topCategoryByPrice.avg.toFixed(0)})` : "N/A"}</div>
+            `;
+        }
 
-            alert(
-                `${filteredProducts.length} Products Exported`
-            );
+        function downloadBlob(blob, fileName) {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function slugify(text) {
+            return String(text || "product")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "")
+                .slice(0, 80) || "product";
         }
 
         function getStoreName() {
@@ -1375,6 +1531,8 @@
                 getStoreName();
             const yourStoreUrl =
                 document.getElementById("yourStoreUrl").value.trim();
+            const sourceAliases =
+                getSourceStoreAliases();
 
             allProducts.forEach(product => {
 
@@ -1382,7 +1540,11 @@
                     stripHTML(product.title || "").trim();
 
                 const baseTitle =
-                    currentTitle.replace(/\s*\|\s*Buy .*? from .*?$/i, "").trim() ||
+                    replaceSourceStoreMentions(
+                        currentTitle.replace(/\s*\|\s*Buy .*? from .*?$/i, "").trim(),
+                        sourceAliases,
+                        yourStoreName
+                    ) ||
                     currentTitle;
 
                 const category =
@@ -1393,10 +1555,18 @@
                     category;
 
                 const seoTitle =
-                    `${baseTitle} | Buy ${category} from ${yourStoreName}`;
+                    replaceSourceStoreMentions(
+                        `${baseTitle} | Buy ${category} from ${yourStoreName}`,
+                        sourceAliases,
+                        yourStoreName
+                    );
 
                 const seoDescription =
-                    `${baseTitle} is a premium ${category} product from ${yourStoreName}. Shop now at ${yourStoreUrl || "your store"} for fast shipping, great prices, and SEO-friendly product pages optimized for Google indexing.`;
+                    replaceSourceStoreMentions(
+                        `${baseTitle} is a premium ${category} product from ${yourStoreName}. Shop now at ${yourStoreUrl || "your store"} for fast shipping, great prices, and SEO-friendly product pages optimized for Google indexing.`,
+                        sourceAliases,
+                        yourStoreName
+                    );
 
                 product.seo_title =
                     seoTitle;
@@ -1408,12 +1578,62 @@
                     seoTitle;
 
                 product.body_html =
-                    `<p>${seoDescription}</p><p>Explore more products from ${yourStoreName} on <a href="${yourStoreUrl || "#"}" target="_blank" rel="noopener">${yourStoreUrl || "your Shopify store"}</a>. Browse page after page for the best deals and indexed product content.</p>`;
+                    replaceSourceStoreMentions(
+                        `<p>${seoDescription}</p><p>Explore more products from ${yourStoreName} on <a href="${yourStoreUrl || "#"}" target="_blank" rel="noopener">${yourStoreUrl || "your Shopify store"}</a>. Browse page after page for the best deals and indexed product content.</p>`,
+                        sourceAliases,
+                        yourStoreName
+                    );
             });
 
             renderProducts(allProducts);
 
             alert(`SEO content updated for ${yourStoreName}`);
+        }
+
+        function getSourceStoreAliases() {
+            const aliases = new Set();
+
+            const sourceStoreName =
+                document.getElementById("sourceStoreName").value.trim();
+            const sourceStoreUrl =
+                document.getElementById("sourceStoreUrl").value.trim();
+
+            if (sourceStoreName) {
+                aliases.add(sourceStoreName);
+            }
+
+            if (sourceStoreUrl) {
+                aliases.add(sourceStoreUrl);
+                aliases.add(sourceStoreUrl.replace(/^https?:\/\//i, "").replace(/\/+$/, ""));
+
+                try {
+                    const url = new URL(sourceStoreUrl.replace(/^https?:\/\//i, "https://"));
+                    const host = url.hostname.replace(/^www\./i, "");
+                    aliases.add(host);
+                    aliases.add(host.split(".")[0]);
+                    aliases.add(host.replace(/\./g, " "));
+                } catch (err) {
+                    // Ignore URL parse issues and keep best-effort aliases.
+                }
+            }
+
+            return [...aliases]
+                .map(item => String(item).trim())
+                .filter(Boolean)
+                .sort((a, b) => b.length - a.length);
+        }
+
+        function replaceSourceStoreMentions(text, aliases, yourStoreName) {
+            let result = String(text || "");
+            const replacement = yourStoreName || "Your Store";
+
+            aliases.forEach(alias => {
+                const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                const pattern = new RegExp(escaped, "gi");
+                result = result.replace(pattern, replacement);
+            });
+
+            return result;
         }
 
         function showShopifyUploader() {
@@ -1490,8 +1710,8 @@
                                 product.tags,
 
                             images:
-                                product.images.map(img => ({
-                                    src: img.src
+                                (product.images || []).map(img => ({
+                                    src: getImageSource(img)
                                 })),
 
                             variants:
@@ -1545,6 +1765,18 @@
                 `Completed Upload (${uploaded} succeeded, ${failed} failed)`;
 
             alert(`Upload Completed (${uploaded} succeeded, ${failed} failed)`);
+        }
+
+        function getImageSource(imageEntry) {
+            if (!imageEntry) {
+                return "";
+            }
+
+            if (typeof imageEntry === "string") {
+                return imageEntry;
+            }
+
+            return imageEntry.src || "";
         }
 
         function cleanCSV(text) {
