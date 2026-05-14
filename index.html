@@ -72,6 +72,42 @@
             margin-bottom: 14px;
         }
 
+        .menuHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+        }
+
+        .menuNav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .menuLink {
+            color: var(--text);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .menuLink.active {
+            border-color: rgba(80, 227, 194, 0.45);
+            background: rgba(80, 227, 194, 0.14);
+            color: #d8fff3;
+        }
+
         .brandBadge {
             display: inline-flex;
             align-items: center;
@@ -192,6 +228,26 @@
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
             margin-bottom: 18px;
+        }
+
+        .bulkBox {
+            margin-bottom: 20px;
+            padding: 14px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .bulkBox textarea {
+            width: 100%;
+            min-height: 88px;
+            resize: vertical;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 0.95rem;
         }
 
         .storeLabel {
@@ -560,10 +616,19 @@
 <body>
 
     <div class="container">
+        <div class="menuHeader">
+            <div class="brandBadge">Shopify Scraper Pro</div>
+            <nav class="menuNav">
+                <a class="menuLink active" href="index.html">Home</a>
+                <a class="menuLink" href="pricing.html">Pricing</a>
+                <a class="menuLink" href="about.html">About</a>
+                <a class="menuLink" href="contact.html">Contact Us</a>
+                <a class="menuLink authBtn" href="javascript:void(0)" style="cursor:pointer; display:inline-flex; align-items:center; border-color: rgba(80, 227, 194, 0.45); background: rgba(80, 227, 194, 0.14); color: #d8fff3; font-weight: 700;">Login with Google</a>
+            </nav>
+        </div>
 
         <div class="heroHeader">
             <div>
-                <div class="brandBadge">Shopify Scraper Pro</div>
                 <h1>Ultimate Shopify Scraper</h1>
             </div>
             <div class="heroPill">AI-powered • Shopify-ready</div>
@@ -632,6 +697,13 @@
             </button>
         </div>
 
+        <div class="bulkBox">
+            <div class="storeLabel">Bulk Stores (Multi-Store Support)</div>
+            <textarea id="sourceStoreList" placeholder="Add one store URL per line, e.g.
+https://store1.com
+https://store2.com"></textarea>
+        </div>
+
         <div class="actions">
             <button onclick="exportJSON()">
                 Export JSON
@@ -643,6 +715,10 @@
 
             <button onclick="generateSEOTitles()">
                 Generate AI SEO
+            </button>
+
+            <button onclick="runBulkAutomation()">
+                Run Bulk Automation
             </button>
 
             <button onclick="showShopifyUploader()" style="display: none;">
@@ -725,67 +801,87 @@
         let allProducts = [];
 
         async function scrapeProducts() {
+            const stores = getStoreList();
 
-            const storeUrl =
-                document.getElementById("sourceStoreUrl")
-                    .value
-                    .trim();
-
-            if (!storeUrl) {
-
-                alert("Enter Store URL");
-
+            if (!stores.length) {
+                alert("Enter at least one Store URL");
                 return;
             }
 
-            let page = 1;
-
             allProducts = [];
+            document.getElementById("products").innerHTML = "";
 
-            document.getElementById("products")
-                .innerHTML = "";
+            for (let storeIndex = 0; storeIndex < stores.length; storeIndex++) {
+                const storeUrl = stores[storeIndex];
+                const normalizedStore = normalizeStoreUrl(storeUrl);
+                const scraped = await scrapeSingleStore(normalizedStore, storeIndex + 1, stores.length);
+                allProducts.push(...scraped);
+                renderProducts(allProducts);
+            }
+
+            document.getElementById("status").innerText =
+                `Completed (${allProducts.length} Products from ${stores.length} store(s))`;
+        }
+
+        async function scrapeSingleStore(storeUrl, storeIndex, storeTotal) {
+            let page = 1;
+            const storeProducts = [];
 
             while (true) {
-
                 try {
+                    document.getElementById("status").innerText =
+                        `Store ${storeIndex}/${storeTotal} - Scraping Page ${page}`;
 
-                    document.getElementById("status")
-                        .innerText =
-                        `Scraping Page ${page}`;
+                    const response = await fetch(`${storeUrl}/products.json?limit=250&page=${page}`);
+                    const data = await response.json();
+                    const products = data.products;
 
-                    const response =
-                        await fetch(
-                            `${storeUrl}/products.json?limit=250&page=${page}`
-                        );
-
-                    const data =
-                        await response.json();
-
-                    const products =
-                        data.products;
-
-                    if (!products || products.length === 0)
+                    if (!products || products.length === 0) {
                         break;
+                    }
 
-                    allProducts.push(...products);
+                    products.forEach(product => {
+                        product.source_store = storeUrl;
+                    });
 
-                    renderProducts(allProducts);
-
+                    storeProducts.push(...products);
                     page++;
-
                 } catch (err) {
-
                     console.log(err);
-
-                    alert("Scraping Failed");
-
+                    alert(`Scraping Failed for ${storeUrl}`);
                     break;
                 }
             }
 
-            document.getElementById("status")
-                .innerText =
-                `Completed (${allProducts.length} Products)`;
+            return storeProducts;
+        }
+
+        function getStoreList() {
+            const primaryStore = document.getElementById("sourceStoreUrl").value.trim();
+            const bulkText = document.getElementById("sourceStoreList").value.trim();
+            const list = [];
+
+            if (primaryStore) {
+                list.push(primaryStore);
+            }
+
+            if (bulkText) {
+                bulkText
+                    .split(/\r?\n|,/)
+                    .map(item => item.trim())
+                    .filter(Boolean)
+                    .forEach(item => list.push(item));
+            }
+
+            return [...new Set(list)];
+        }
+
+        function normalizeStoreUrl(url) {
+            const trimmed = String(url || "").trim();
+            if (!trimmed) {
+                return "";
+            }
+            return /^https?:\/\//i.test(trimmed) ? trimmed.replace(/\/+$/, "") : `https://${trimmed.replace(/\/+$/, "")}`;
         }
 
         function updateDashboardStats(products) {
@@ -1590,6 +1686,28 @@
             alert(`SEO content updated for ${yourStoreName}`);
         }
 
+        async function runBulkAutomation() {
+            const stores = getStoreList();
+
+            if (!stores.length) {
+                alert("Enter at least one Store URL for automation");
+                return;
+            }
+
+            document.getElementById("status").innerText = "Bulk automation started...";
+
+            await scrapeProducts();
+
+            if (!allProducts.length) {
+                document.getElementById("status").innerText = "Bulk automation stopped (no products found)";
+                return;
+            }
+
+            generateSEOTitles();
+            document.getElementById("status").innerText =
+                `Bulk automation completed (${allProducts.length} products processed)`;
+        }
+
         function getSourceStoreAliases() {
             const aliases = new Set();
 
@@ -1799,6 +1917,8 @@
 
     </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
 </body>
 
 </html>

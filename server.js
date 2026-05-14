@@ -10,9 +10,14 @@ app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.static("public"));
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
+app.get("/index.html", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
+app.get("/pricing", (req, res) => res.sendFile(path.join(__dirname, "pricing.html")));
+app.get("/pricing.html", (req, res) => res.sendFile(path.join(__dirname, "pricing.html")));
+app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "about.html")));
+app.get("/about.html", (req, res) => res.sendFile(path.join(__dirname, "about.html")));
+app.get("/contact", (req, res) => res.sendFile(path.join(__dirname, "contact.html")));
+app.get("/contact.html", (req, res) => res.sendFile(path.join(__dirname, "contact.html")));
 
 app.post("/upload", async (req, res) => {
 

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Ultimate Shopify Scraper</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #070b14;
+            --card: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #edf2f7;
+            --muted: #a6b1c8;
+            --accent: #50e3c2;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #1a2a43 0%, #080b14 55%, #020305 100%);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            background: rgba(8, 15, 31, 0.96);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+        }
+
+        .menuHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+        }
+
+        .brandBadge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(80, 227, 194, 0.16);
+            color: #d4fff2;
+            font-size: 0.92rem;
+            font-weight: 700;
+            border: 1px solid rgba(80, 227, 194, 0.3);
+            letter-spacing: 0.02em;
+        }
+
+        .brandBadge::before {
+            content: "\1F4C1";
+            font-size: 1rem;
+        }
+
+        .brandBtn {
+            color: var(--text);
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .menuNav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .menuLink {
+            color: var(--text);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .menuLink.active {
+            border-color: rgba(80, 227, 194, 0.45);
+            background: rgba(80, 227, 194, 0.14);
+            color: #d8fff3;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.6rem);
+            margin-bottom: 10px;
+        }
+
+        .sub {
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 12px;
+        }
+
+        .card h3 {
+            margin-bottom: 6px;
+            color: #fff;
+        }
+
+        .card p, .card a {
+            color: var(--muted);
+            text-decoration: none;
+        }
+
+        .card a:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="menuHeader">
+            <div class="brandBadge">Shopify Scraper Pro</div>
+            <nav class="menuNav">
+                <a class="menuLink" href="index.html">Home</a>
+                <a class="menuLink" href="pricing.html">Pricing</a>
+                <a class="menuLink" href="about.html">About</a>
+                <a class="menuLink active" href="contact.html">Contact Us</a>
+                <a class="menuLink authBtn" href="javascript:void(0)" style="cursor:pointer; display:inline-flex; align-items:center; border-color: rgba(80, 227, 194, 0.45); background: rgba(80, 227, 194, 0.14); color: #d8fff3; font-weight: 700;">Login with Google</a>
+            </nav>
+        </div>
+
+        <h1>Contact Us</h1>
+        <p class="sub">Reach out for product demos, agency partnerships, or technical support related to scraping, SEO automation, exports, and analytics workflows.</p>
+
+        <div class="card">
+            <h3>Email Support</h3>
+            <p><a href="mailto:support@ultimateshopifyscraper.com">support@ultimateshopifyscraper.com</a></p>
+        </div>
+
+        <div class="card">
+            <h3>Sales & Partnerships</h3>
+            <p><a href="mailto:sales@ultimateshopifyscraper.com">sales@ultimateshopifyscraper.com</a></p>
+        </div>
+
+        <div class="card">
+            <h3>Response Time</h3>
+            <p>We usually respond within 24 business hours.</p>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+</body>
+</html>

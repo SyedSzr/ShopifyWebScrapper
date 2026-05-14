@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - Ultimate Shopify Scraper</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #070b14;
+            --card: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #edf2f7;
+            --muted: #a6b1c8;
+            --accent: #50e3c2;
+            --accent2: #2ed8b7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #1a2a43 0%, #080b14 55%, #020305 100%);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(8, 15, 31, 0.96);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            margin-bottom: 8px;
+        }
+
+        .sub {
+            color: var(--muted);
+            margin-bottom: 26px;
+        }
+
+        .navBtn {
+            display: inline-block;
+            margin-bottom: 22px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: var(--text);
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 12px;
+        }
+
+        .menuHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+        }
+
+        .brandBadge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(80, 227, 194, 0.16);
+            color: #d4fff2;
+            font-size: 0.92rem;
+            font-weight: 700;
+            border: 1px solid rgba(80, 227, 194, 0.3);
+            letter-spacing: 0.02em;
+        }
+
+        .brandBadge::before {
+            content: "\1F4C1";
+            font-size: 1rem;
+        }
+
+        .menuNav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .menuLink {
+            color: var(--text);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .menuLink.active {
+            border-color: rgba(80, 227, 194, 0.45);
+            background: rgba(80, 227, 194, 0.14);
+            color: #d8fff3;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin-bottom: 8px;
+        }
+
+        .price {
+            color: var(--accent);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        ul {
+            list-style: none;
+            color: var(--muted);
+            display: grid;
+            gap: 8px;
+        }
+
+        .featured {
+            border-color: rgba(80, 227, 194, 0.45);
+            box-shadow: 0 0 0 1px rgba(80, 227, 194, 0.2) inset;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.78rem;
+            color: #d4fff2;
+            background: rgba(80, 227, 194, 0.18);
+            border: 1px solid rgba(80, 227, 194, 0.35);
+            border-radius: 999px;
+            padding: 4px 10px;
+            margin-bottom: 10px;
+        }
+
+        .sectionTitle {
+            margin: 24px 0 12px;
+            font-size: 1.35rem;
+        }
+
+        .featureGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 10px;
+        }
+
+        .featureItem {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 11px 12px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .featureItem strong {
+            color: #d8fff3;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="menuHeader">
+            <div class="brandBadge">Shopify Scraper Pro</div>
+            <nav class="menuNav">
+                <a class="menuLink" href="index.html">Home</a>
+                <a class="menuLink active" href="pricing.html">Pricing</a>
+                <a class="menuLink" href="about.html">About</a>
+                <a class="menuLink" href="contact.html">Contact Us</a>
+                <a class="menuLink authBtn" href="javascript:void(0)" style="cursor:pointer; display:inline-flex; align-items:center; border-color: rgba(80, 227, 194, 0.45); background: rgba(80, 227, 194, 0.14); color: #d8fff3; font-weight: 700;">Login with Google</a>
+            </nav>
+        </div>
+        <h1>Pricing</h1>
+        <p class="sub">Simple pricing with a one-time unlock for exports.</p>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Free</h2>
+                <div class="price">$0 / month</div>
+                <ul>
+                    <li>Limited products/month</li>
+                    <li>Fetch products</li>
+                    <li>Generate AI SEO</li>
+                    <li>Export JSON locked</li>
+                    <li>Export CSV locked</li>
+                    <li>Best for trial and testing</li>
+                </ul>
+            </div>
+
+            <div class="card featured">
+                <span class="badge">Most popular</span>
+                <h2>One-Time Unlock</h2>
+                <div class="price">$5 one-time</div>
+                <ul>
+                    <li>Unlock Export JSON</li>
+                    <li>Unlock Export CSV</li>
+                    <li>One-time payment, no subscription</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 class="sectionTitle">What You Get In This Site</h2>
+        <div class="featureGrid">
+            <div class="featureItem"><strong>✅</strong>AI Shopify Scraper</div>
+            <div class="featureItem"><strong>✅</strong>Product description support</div>
+            <div class="featureItem"><strong>✅</strong>Gallery images support</div>
+            <div class="featureItem"><strong>✅</strong>Variants and variant prices</div>
+            <div class="featureItem"><strong>✅</strong>Selected category export</div>
+            <div class="featureItem"><strong>✅</strong>Exact single-product export (JSON/CSV)</div>
+            <div class="featureItem"><strong>✅</strong>Multiple gallery images</div>
+            <div class="featureItem"><strong>✅</strong>Variant export support</div>
+            <div class="featureItem"><strong>✅</strong>SEO title export</div>
+            <div class="featureItem"><strong>✅</strong>Shopify image grouping</div>
+            <div class="featureItem"><strong>✅</strong>Better Shopify compatibility</div>
+            <div class="featureItem"><strong>✅</strong>Closer clone of original store</div>
+            <div class="featureItem"><strong>✅</strong>Product category mapping in Shopify</div>
+            <div class="featureItem"><strong>✅</strong>Main image + gallery images properly mapped</div>
+            <div class="featureItem"><strong>✅</strong>Variant titles</div>
+            <div class="featureItem"><strong>✅</strong>SEO titles</div>
+            <div class="featureItem"><strong>✅</strong>Product category and AI categories</div>
+            <div class="featureItem"><strong>✅</strong>Shopify inventory fields</div>
+            <div class="featureItem"><strong>✅</strong>Product handles and product tags</div>
+            <div class="featureItem"><strong>✅</strong>Admin analytics: total products, categories, average/highest/lowest price, most-used tags</div>
+            <div class="featureItem"><strong>✅</strong>Bulk automation</div>
+            <div class="featureItem"><strong>✅</strong>Bulk stores scrape (multi-store support)</div>
+            <div class="featureItem"><strong>✅</strong>AI trend analysis</div>
+            <div class="featureItem"><strong>✅</strong>Category filters</div>
+            <div class="featureItem"><strong>✅</strong>AI SEO titles</div>
+            <div class="featureItem"><strong>✅</strong>JSON export</div>
+            <div class="featureItem"><strong>✅</strong>Shopify CSV export</div>
+            <div class="featureItem"><strong>✅</strong>Category-based CSV</div>
+            <div class="featureItem"><strong>✅</strong>Shopify-compatible product import</div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
