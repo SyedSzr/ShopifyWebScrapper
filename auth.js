@@ -16,7 +16,9 @@ async function loginWithGoogle() {
     console.log('Attempting to login with Google...');
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin }
+        options: {
+            redirectTo: 'https://syedszr.github.io/ShopifyWebScrapper/'
+        }
     });
     if (error) {
         console.error('Login Error:', error.message);
